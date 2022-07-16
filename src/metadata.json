@@ -1,0 +1,14 @@
+{
+  "name": "serverplugin-rest",
+  "version": "1.3.0",
+  "author": "xFusion Digital Technologies Co., Ltd.",
+  "summary": "XFUSION rest tool puppet module",
+  "license": "MIT",
+  "source": "",
+  "project_page": "",
+  "issues_url": "",
+  "data_provider": null,
+  "dependencies": [
+    {"name":"puppetlabs-stdlib","version_requirement":">= 5.0.0"}
+  ]
+}
