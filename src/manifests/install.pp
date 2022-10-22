@@ -16,7 +16,7 @@ class rest::install {
     ]
     file { $dirs:
       ensure => directory,
-      mode   => '0755',
+      mode   => '0550',
     }
 
     # Copy module files to client server
@@ -24,6 +24,7 @@ class rest::install {
       ensure  => directory,
       source  => 'puppet:///modules/rest',
       recurse => true,
+      mode    => '0550',
       require => File['/etc/puppet/modules/rest'],
     }
   }

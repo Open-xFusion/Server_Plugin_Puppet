@@ -6,6 +6,7 @@ Date:2018.12.13
 """
 import errno
 import os
+import stat
 import sys
 import time
 
@@ -51,7 +52,6 @@ def is_pathname_valid(pathname):
         # environment variable); else, the typical root directory.
         root_dirname = os.environ.get('HOMEDRIVE', 'C:') \
             if sys.platform == 'win32' else os.path.sep
-        assert os.path.isdir(root_dirname)   # ...Murphy and her ironclad Law
 
         # Append a path separator to this directory if needed.
         root_dirname = root_dirname.rstrip(os.path.sep) + os.path.sep
@@ -168,6 +168,56 @@ def exportlicense(client, args):
     }
 
     # treat it as local file
+    is_local_file_path, payload = _check_image_uri(payload, args)
+
+    resp = client.create_resource(url, payload)
+    if resp is None:
+        return None
+
+    if resp.get('status_code') == 202:
+        time.sleep(1)
+        resp_task = client.print_task_prog(resp)
+        if resp_task is None:
+            return None
+
+        if resp_task == 'Exception':
+            _resptaskparse(resp, client)
+            sys.exit(144)
+    if resp['status_code'] == 200:
+        if is_local_file_path:
+            # download bmc file
+            _payload = {
+                "TransferProtocol": "HTTPS",
+                "Path": payload.get('Content')
+            }
+            download_url = "/redfish/v1/Managers/%s" \
+                "/Actions/Oem/%s/Manager.GeneralDownload" % (slotid, common_function.COMMON_KEY)
+            # Because license file is small, so we just keep it in memory directly ....
+            resp = client.create_resource(download_url, _payload)
+            if resp is not None and resp.get('status_code') < 300:
+                flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+                modes = stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
+                with os.fdopen(os.open(args.exportTo, flags, modes), 'wb') as file:
+                    file.write(resp.get('resource'))
+            else :
+                print("Failure: failed to download file to %s from BMC" % args.exportTo)
+                sys.exit(144)
+
+        print('Success: successfully completed request')
+        return resp
+    else:
+        info = resp['message']['error']['@Message.ExtendedInfo'][0]
+        message_id = info.get('MessageId')
+        if 'Format' in message_id:
+            print('Failure: import failed due to invalid path')
+        else:
+            message = (info.get('Message')).lower()
+            print('Failure: ' + message[:-1])
+
+    return resp
+
+
+def _check_image_uri(payload, args):
     is_local_file_path = False
     image_uri = args.exportTo
     if is_file_exists_or_creatable(image_uri):
@@ -192,57 +242,12 @@ def exportlicense(client, args):
                 payload['Content'] = (image_uri)
                 break
 
-        if protocol == None:
+        if protocol is None:
             message = ('Failure: File Uri %s is not exits or not supported, '
                        'file transfer protocols should be one of %s.')
-            print (message % (image_uri, ','.join(protocol_list)))
+            print(message % (image_uri, ','.join(protocol_list)))
             return None
-
-
-    resp = client.create_resource(url, payload)
-    if resp is None:
-        return None
-
-
-    if resp.get('status_code') == 202:
-        time.sleep(1)
-        resp_task = client.print_task_prog(resp)
-        if resp_task is None:
-            return None
-
-        if resp_task == 'Exception':
-            _resptaskparse(resp, client)
-            sys.exit(144)
-    if resp['status_code'] == 200:
-        if is_local_file_path:
-            # download bmc file
-            _payload = {
-                "TransferProtocol": "HTTPS",
-                "Path": payload.get('Content')
-            }
-            download_url = "/redfish/v1/Managers/%s" \
-                "/Actions/Oem/%s/Manager.GeneralDownload" % (slotid, common_function.COMMON_KEY)
-            # Because license file is small, so we just keep it in memory directly ....
-            resp = client.create_resource(download_url, _payload)
-            if resp is not None and resp.get('status_code') < 300:
-                with open(args.exportTo, 'wb') as file:
-                    file.write(resp.get('resource'))
-            else :
-                print("Failure: failed to download file to %s from BMC" % args.exportTo)
-                sys.exit(144)
-
-        print('Success: successfully completed request')
-        return resp
-    else:
-        info = resp['message']['error']['@Message.ExtendedInfo'][0]
-        message_id = info.get('MessageId')
-        if 'Format' in message_id:
-            print('Failure: import failed due to invalid path')
-        else:
-            message = (info.get('Message')).lower()
-            print('Failure: ' + message[:-1])
-
-    return resp
+    return is_local_file_path, payload
 
 
 def _resptaskparse(resp, client):

@@ -4,7 +4,10 @@
 Function:Delete license
 Date:2019.01.18
 """
-from common_function import display_error_message
+from common_function import change_message
+from common_function import CustomError
+from common_function import SLOT_ID_ERROR
+from common_function import RESOURCE_NULL
 
 
 def deletelicense_init(parser, parser_list):
@@ -30,14 +33,14 @@ def deletelicense(client, args):
     # Obtain the slot number.
     slotid = client.get_slotid()
     if slotid is None:
-        return None
+        raise CustomError(SLOT_ID_ERROR)
 
     url = "/redfish/v1/Managers/%s/LicenseService" \
           "/Actions/LicenseService.DeleteLicense" % slotid
     resp = client.create_resource(url, {})
 
     if resp is None:
-        return None
+        raise CustomError(RESOURCE_NULL)
 
     status_code = resp['status_code']
     if status_code == 200:
@@ -45,7 +48,15 @@ def deletelicense(client, args):
     elif status_code == 404:
         print('Failure: resource was not found')
     elif status_code < 500:
-        display_error_message(client, resp)
+        messages = resp['message']['error']['@Message.ExtendedInfo']
+        if messages is None or len(messages) == 0:
+            raise CustomError("Message in resp is null.")
+
+        message = messages[0]
+        print(message)
+        failure = change_message(message['Message'])
+        resolution = message['Resolution']
+        print('Failure: %s; Resolution: %s.' % (failure, resolution))
     else:
         print("Failure: the request failed due to an internal service error")
 

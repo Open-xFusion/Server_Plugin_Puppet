@@ -30,11 +30,11 @@ define rest::user::set (
   }
 
   $params = {
-    '-NN'      => $newusername ? {
+    '-UN'      => $newusername ? {
       undef   => undef,
       default => $newusername
     },
-    '-NP'      => $newpassword ? {
+    '-P'      => $newpassword ? {
       undef   => undef,
       default => $newpassword
     },

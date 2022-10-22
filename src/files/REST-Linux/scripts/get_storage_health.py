@@ -52,7 +52,7 @@ def getcontrollerinfo(client, controller_uri, flag):
     # Export controller information.
     storage = controller_uri.split(r'/')[6]
     if flag == 0:
-        print ('-' * 40)
+        print('-' * 40)
     print(PF2.format('Id', storage[-1]))
     print(PF2.format('Name', controller['Name']))
     print(PF2.format('Health', controller['Status']['Health']))
@@ -60,12 +60,12 @@ def getcontrollerinfo(client, controller_uri, flag):
 
     oem = controller['Oem'][common_function.COMMON_KEY]
     if oem['CapacitanceStatus']:
-        print ('[CapacitanceStatus]')
+        print('[CapacitanceStatus]')
         print(PF2.format('Health', oem['CapacitanceStatus']['Health']))
         print(PF2.format('State', oem['CapacitanceStatus']['State']))
     else:
         print(PF2.format('CapacitanceStatus', None))
-    print ('-' * 40)
+    print('-' * 40)
     return ctrl_resp
 
 
