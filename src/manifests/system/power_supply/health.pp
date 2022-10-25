@@ -22,7 +22,7 @@ define rest::system::power_supply::health (
   }
 
   $script = "sh rest -H '${ibmc_host}' -p ${ibmc_port} -U '${ibmc_username}' -P '${ibmc_password}' --error-code $ignore_cert"
-  $command = 'getpsuhealth'
+  $command = 'getpsu'
 
   exec_urest { $title:
     command => "${script} ${command}",

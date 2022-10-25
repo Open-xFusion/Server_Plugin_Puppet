@@ -4,11 +4,18 @@
 
 from __future__ import print_function
 from __future__ import unicode_literals
+
+import logging
+import os
+import stat
 from collections import namedtuple, Iterable
 from platform import python_version_tuple
 import re
 import math
 
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
+log.addHandler(logging.StreamHandler())
 
 if python_version_tuple()[0] < "3":
     from itertools import izip_longest
@@ -780,8 +787,7 @@ def _prepend_row_index(rows, index):
     if index is None or index is False:
         return rows
     if len(index) != len(rows):
-        print('index=', index)
-        print('rows=', rows)
+        log.info('index=%s, rows=%s', index, rows)
         raise ValueError('index must be as long as the number of data rows')
     rows = [[v]+list(row) for v,row in zip(index, rows)]
     return rows
@@ -1464,8 +1470,8 @@ def _main():
                      "h1o:s:F:f:",
                      ["help", "header", "output", "sep=", "float=", "format="])
     except getopt.GetoptError as e:
-        print(e)
-        print(usage)
+        log.exception(e)
+        log.error(usage)
         sys.exit(2)
     headers = []
     floatfmt = _DEFAULT_FLOATFMT
@@ -1481,17 +1487,19 @@ def _main():
             floatfmt = value
         elif opt in ["-f", "--format"]:
             if value not in tabulate_formats:
-                print("%s is not a supported table format" % value)
-                print(usage)
+                log.info("%s is not a supported table format" % value)
+                log.info(usage)
                 sys.exit(3)
             tablefmt = value
         elif opt in ["-s", "--sep"]:
             sep = value
         elif opt in ["-h", "--help"]:
-            print(usage)
+            log.info(usage)
             sys.exit(0)
     files = [sys.stdin] if not args else args
-    with (sys.stdout if outfile == "-" else open(outfile, "w")) as out:
+    flags = os.O_WRONLY | os.O_CREAT
+    modes = stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
+    with (sys.stdout if outfile == "-" else os.fdopen(os.open(outfile, flags, modes), 'w')) as out:
         for f in files:
             if f == "-":
                 f = sys.stdin
@@ -1507,7 +1515,7 @@ def _main():
 def _pprint_file(fobject, headers, tablefmt, sep, floatfmt, file):
     rows = fobject.readlines()
     table = [re.split(sep, r.rstrip()) for r in rows if r.strip()]
-    print(tabulate(table, headers, tablefmt, floatfmt=floatfmt), file=file)
+    log.info(tabulate(table, headers, tablefmt, floatfmt=floatfmt), file=file)
 
 
 if __name__ == "__main__":

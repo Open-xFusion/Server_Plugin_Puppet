@@ -32,7 +32,7 @@ node default {
       snmpV3AuthProtocol => "MD5",
       snmpV3PrivProtocol => "AES",
       enabled            => false,
-      locked             => true,
+      locked             => false,
       ignoreCert         => false,
     }
   }

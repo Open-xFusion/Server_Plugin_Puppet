@@ -1,6 +1,6 @@
 {
   "name": "serverplugin-rest",
-  "version": "1.3.0",
+  "version": "1.4",
   "author": "xFusion Digital Technologies Co., Ltd.",
   "summary": "XFUSION rest tool puppet module",
   "license": "MIT",

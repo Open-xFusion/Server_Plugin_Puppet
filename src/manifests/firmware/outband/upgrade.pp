@@ -27,7 +27,7 @@ define rest::firmware::outband::upgrade (
   }
 
   $script = "sh rest -H '${ibmc_host}' -p ${ibmc_port} -U '${ibmc_username}' -P '${ibmc_password}' --error-code $ignore_cert"
-  $command = "upgradefw '${param}'"
+  $command = "upgradefw ${param}"
 
   warning("Upgrade outband firmware may takes a long time, please be patient.")
 
